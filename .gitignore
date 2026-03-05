@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+*.log
+.env
+.env.local
+
+# Data (uploaded files, converted outputs)
+data/
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# OS
+.DS_Store
