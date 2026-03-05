@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import type { JobResponse } from '@sticker/core';
+import type { Dictionary } from '@/lib/i18n';
 import UploadDropzone from '@/components/UploadDropzone';
 import StatusCard from '@/components/StatusCard';
 import TelegramChecklist from '@/components/TelegramChecklist';
@@ -14,7 +15,11 @@ type AppState =
   | { phase: 'done'; jobId: string; job: JobResponse }
   | { phase: 'error'; message: string };
 
-export default function Home() {
+interface Props {
+  dict: Dictionary;
+}
+
+export default function ConverterClient({ dict }: Props) {
   const [appState, setAppState] = useState<AppState>({ phase: 'idle' });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -41,7 +46,7 @@ export default function Home() {
           intervalRef.current = null;
           setAppState({
             phase: 'error',
-            message: job.error?.message ?? 'Conversion failed',
+            message: job.error?.message ?? dict.error.title,
           });
         } else {
           setAppState({
@@ -53,7 +58,7 @@ export default function Home() {
       } catch {
         clearInterval(interval);
         intervalRef.current = null;
-        setAppState({ phase: 'error', message: 'Lost connection. Please try again.' });
+        setAppState({ phase: 'error', message: dict.error.lostConnection });
       }
     }, 1000);
     intervalRef.current = interval;
@@ -72,7 +77,7 @@ export default function Home() {
         const data = await res.json();
         setAppState({
           phase: 'error',
-          message: data.error?.message ?? 'Upload failed',
+          message: data.error?.message ?? dict.error.uploadFailed,
         });
         return;
       }
@@ -81,7 +86,7 @@ export default function Home() {
       setAppState({ phase: 'polling', jobId, status: 'queued' });
       startPolling(jobId);
     } catch {
-      setAppState({ phase: 'error', message: 'Upload failed. Please try again.' });
+      setAppState({ phase: 'error', message: dict.error.uploadFailed });
     }
   }
 
@@ -99,10 +104,10 @@ export default function Home() {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-gray-100 leading-tight">
-              Telegram Sticker Converter
+              {dict.header.title}
             </h1>
             <p className="text-xs text-gray-400 hidden sm:block">
-              Convert animated files to Telegram-ready VP9 WebM stickers
+              {dict.header.subtitle}
             </p>
           </div>
           <a
@@ -111,7 +116,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0"
           >
-            Telegram requirements&nbsp;&uarr;&#xFE0E;
+            {dict.header.requirements}&nbsp;&uarr;&#xFE0E;
           </a>
         </div>
       </header>
@@ -120,42 +125,39 @@ export default function Home() {
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-10 flex flex-col gap-6">
         <div className="text-center sm:text-left">
           <p className="text-gray-400 sm:hidden text-sm">
-            Convert animated files to Telegram-ready VP9 WebM stickers
+            {dict.header.subtitle}
           </p>
         </div>
 
-        {/* Upload dropzone: always visible when idle or uploading */}
         {(phase === 'idle' || phase === 'uploading') && (
           <UploadDropzone
             onFile={handleFile}
             disabled={phase === 'uploading'}
+            dict={dict}
           />
         )}
 
-        {/* Status card: uploading */}
         {phase === 'uploading' && (
-          <StatusCard status="uploading" />
+          <StatusCard status="uploading" dict={dict} />
         )}
 
-        {/* Status card: polling */}
         {phase === 'polling' && (
-          <StatusCard status={appState.status} />
+          <StatusCard status={appState.status} dict={dict} />
         )}
 
-        {/* Done state */}
         {phase === 'done' && appState.job.checks && appState.job.output && (
           <>
-            <TelegramChecklist checks={appState.job.checks} />
+            <TelegramChecklist checks={appState.job.checks} dict={dict} />
             <ResultCard
               jobId={appState.jobId}
               output={appState.job.output}
               checks={appState.job.checks}
               onReset={handleReset}
+              dict={dict}
             />
           </>
         )}
 
-        {/* Error state */}
         {phase === 'error' && (
           <div className="bg-gray-900 border border-red-800 rounded-xl p-6 flex flex-col gap-4">
             <div className="flex items-start gap-3">
@@ -174,7 +176,7 @@ export default function Home() {
                 />
               </svg>
               <div>
-                <p className="text-sm font-semibold text-red-400">Conversion failed</p>
+                <p className="text-sm font-semibold text-red-400">{dict.error.title}</p>
                 <p className="text-sm text-gray-300 mt-1">{appState.message}</p>
               </div>
             </div>
@@ -183,7 +185,7 @@ export default function Home() {
               onClick={handleReset}
               className="w-full rounded-lg bg-gray-800 px-6 py-2.5 text-sm font-medium text-gray-200 transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900"
             >
-              Try again
+              {dict.error.tryAgain}
             </button>
           </div>
         )}
@@ -192,7 +194,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-gray-800 py-6">
         <p className="text-center text-xs text-gray-500">
-          No account required. Files automatically deleted after 24 hours.
+          {dict.footer}
         </p>
       </footer>
     </div>
