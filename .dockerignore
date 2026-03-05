@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+data
+.env
+.env.local
+fixtures
+docs
+playwright-report
+test-results
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+.git
