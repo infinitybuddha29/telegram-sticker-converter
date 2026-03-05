@@ -3,9 +3,12 @@ import { processJob } from './processJob.js';
 import { runCleanup } from './cleanup.js';
 import { config } from './config.js';
 
+const _redisUrl = new URL(config.redisUrl);
 const connection = {
-  host: new URL(config.redisUrl).hostname,
-  port: parseInt(new URL(config.redisUrl).port || '6379', 10),
+  host: _redisUrl.hostname,
+  port: parseInt(_redisUrl.port || '6379', 10),
+  username: _redisUrl.username || undefined,
+  password: _redisUrl.password ? decodeURIComponent(_redisUrl.password) : undefined,
 };
 
 // Main conversion worker
