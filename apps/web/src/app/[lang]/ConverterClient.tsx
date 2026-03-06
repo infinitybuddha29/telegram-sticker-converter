@@ -55,10 +55,14 @@ export default function ConverterClient({ dict }: Props) {
             status: job.status as 'queued' | 'processing',
           });
         }
-      } catch {
+      } catch (err) {
         clearInterval(interval);
         intervalRef.current = null;
-        setAppState({ phase: 'error', message: dict.error.lostConnection });
+        const detail = err instanceof Error ? err.message : String(err);
+        setAppState({
+          phase: 'error',
+          message: `${dict.error.lostConnection}: ${detail}`,
+        });
       }
     }, 1000);
     intervalRef.current = interval;
@@ -74,19 +78,26 @@ export default function ConverterClient({ dict }: Props) {
     try {
       const res = await fetch('/api/jobs', { method: 'POST', body: formData });
       if (!res.ok) {
-        const data = await res.json();
-        setAppState({
-          phase: 'error',
-          message: data.error?.message ?? dict.error.uploadFailed,
-        });
+        let message = `${dict.error.uploadFailed} (HTTP ${res.status})`;
+        try {
+          const data = await res.json();
+          if (data.error?.message) message = data.error.message;
+        } catch {
+          // non-JSON response — use status code message
+        }
+        setAppState({ phase: 'error', message });
         return;
       }
 
       const { jobId } = await res.json();
       setAppState({ phase: 'polling', jobId, status: 'queued' });
       startPolling(jobId);
-    } catch {
-      setAppState({ phase: 'error', message: dict.error.uploadFailed });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      setAppState({
+        phase: 'error',
+        message: `${dict.error.uploadFailed}: ${detail}`,
+      });
     }
   }
 
