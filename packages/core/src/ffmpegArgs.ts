@@ -7,9 +7,12 @@ export interface TwoPassArgs {
 }
 
 function buildCommonEncodeArgs(strategy: EncodingStrategy): string[] {
+  // Fix the long side to exactly scaleMax and round the short side to nearest even.
+  // Using -2 alone lets ffmpeg round the short side first, which can shift the long side
+  // off 512 (e.g. 384×128 → 510×170 instead of 512×170).
   const scaleFilter = strategy.sourceWidth >= strategy.sourceHeight
-    ? `scale=${strategy.scaleMax}:-2:force_original_aspect_ratio=decrease`
-    : `scale=-2:${strategy.scaleMax}:force_original_aspect_ratio=decrease`;
+    ? `scale=${strategy.scaleMax}:trunc(ih*${strategy.scaleMax}/iw/2)*2`
+    : `scale=trunc(iw*${strategy.scaleMax}/ih/2)*2:${strategy.scaleMax}`;
 
   const filterChain = `fps=${strategy.fps},${scaleFilter}`;
   const pixFmt = strategy.hasAlpha ? 'yuva420p' : 'yuv420p';
