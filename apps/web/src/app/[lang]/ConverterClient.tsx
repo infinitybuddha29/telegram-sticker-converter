@@ -113,13 +113,16 @@ export default function ConverterClient({ dict }: Props) {
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-gray-100 leading-tight">
-              {dict.header.title}
-            </h1>
-            <p className="text-xs text-gray-400 hidden sm:block">
-              {dict.header.subtitle}
-            </p>
+          <div className="flex items-center gap-2">
+            <img src="/logo-mark.svg" width={28} height={28} alt="" className="flex-shrink-0" />
+            <div>
+              <h1 className="text-lg font-bold text-gray-100 leading-tight">
+                {dict.header.title}
+              </h1>
+              <p className="text-xs text-gray-400 hidden sm:block">
+                {dict.header.subtitle}
+              </p>
+            </div>
           </div>
           <a
             href="https://core.telegram.org/stickers"

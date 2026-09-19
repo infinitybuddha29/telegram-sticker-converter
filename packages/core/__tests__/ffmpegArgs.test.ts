@@ -65,24 +65,26 @@ describe('buildTwoPassArgs', () => {
     expect(pass2[pass2.length - 1]).toBe(OUTPUT_PATH);
   });
 
-  it('uses scale=512:-2 filter for landscape (width >= height)', () => {
+  it('pins width to exactly 512 for landscape (width >= height)', () => {
     const strategy = { ...baseStrategy(), sourceWidth: 600, sourceHeight: 400 };
     const { pass1 } = buildTwoPassArgs(strategy, INPUT_PATH, OUTPUT_PATH, JOB_ID, TMP_DIR);
     const vfIdx = pass1.indexOf('-vf');
     expect(vfIdx).toBeGreaterThan(-1);
     const filterChain = pass1[vfIdx + 1] ?? '';
-    expect(filterChain).toContain('scale=512:-2');
-    expect(filterChain).not.toContain('scale=-2:512');
+    // Long side is a literal 512; the short side is derived and rounded to even.
+    expect(filterChain).toContain('scale=512:trunc(ih*512/iw/2)*2');
+    // `-2` would let ffmpeg round the short side first and shift 512 off by a pixel.
+    expect(filterChain).not.toContain('-2');
   });
 
-  it('uses scale=-2:512 filter for portrait (height > width)', () => {
+  it('pins height to exactly 512 for portrait (height > width)', () => {
     const strategy = { ...baseStrategy(), sourceWidth: 300, sourceHeight: 500 };
     const { pass1 } = buildTwoPassArgs(strategy, INPUT_PATH, OUTPUT_PATH, JOB_ID, TMP_DIR);
     const vfIdx = pass1.indexOf('-vf');
     expect(vfIdx).toBeGreaterThan(-1);
     const filterChain = pass1[vfIdx + 1] ?? '';
-    expect(filterChain).toContain('scale=-2:512');
-    expect(filterChain).not.toContain('scale=512:-2');
+    expect(filterChain).toContain('scale=trunc(iw*512/ih/2)*2:512');
+    expect(filterChain).not.toContain('-2:');
   });
 
   it('uses yuva420p pix_fmt when hasAlpha is true', () => {
